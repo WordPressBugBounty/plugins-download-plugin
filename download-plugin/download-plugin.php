@@ -4,8 +4,8 @@
 *  Plugin URI: http://metagauss.com
 *  Description: Download any plugin from your WordPress admin panel's Plugins page by just one click! Now, download themes, users, blog posts, pages, custom posts, comments, attachments and much more.
 *  Version: 2.2.0
-*  Author: Metagauss
-*  Author URI: https://profiles.wordpress.org/metagauss/
+*  Author: Download Plugin
+*  Author URI: https://profiles.wordpress.org/downloadplugin/
 *  Text Domain: download-plugin
 *  Requires at least: 4.8
 *  Tested up to: 6.5
