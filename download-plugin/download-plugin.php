@@ -3,9 +3,9 @@
 *  Plugin Name: Download Plugin
 *  Plugin URI: http://metagauss.com
 *  Description: Download any plugin from your WordPress admin panel's Plugins page by just one click! Now, download themes, users, blog posts, pages, custom posts, comments, attachments and much more.
-*  Version: 2.2.0
-*  Author: Download Plugin
-*  Author URI: https://profiles.wordpress.org/downloadplugin/
+*  Version: 2.2.1
+*  Author: Metagauss
+*  Author URI: https://profiles.wordpress.org/metagauss/
 *  Text Domain: download-plugin
 *  Requires at least: 4.8
 *  Tested up to: 6.5
@@ -91,15 +91,20 @@ if ( !function_exists( 'dpwap_func_uninstall' ) ){
 // enhancement start 
 // Add download link to post/page row actions
 function dpwap_add_download_link($actions, $post) {
-    $download_url = add_query_arg(
-        [
-            'dpwap_download' => 1,
-            'post_id' => $post->ID,
-            'type' => $post->post_type,
-        ],
-        admin_url('edit.php')
-    );
-    $actions['dpwap_download'] = '<a href="' . esc_url($download_url) . '">Download</a>';
+    if (current_user_can('manage_options')) {
+        $download_url = wp_nonce_url(
+            add_query_arg(
+                [
+                    'dpwap_download' => 1,
+                    'post_id' => $post->ID,
+                    'type' => $post->post_type,
+                ],
+                admin_url('edit.php')
+            ),
+            'dpwap_download_post_' . $post->ID
+        );
+        $actions['dpwap_download'] = '<a href="' . esc_url($download_url) . '">Download</a>';
+    }
     return $actions;
 }
 add_filter('post_row_actions', 'dpwap_add_download_link', 10, 2);
@@ -107,8 +112,13 @@ add_filter('page_row_actions', 'dpwap_add_download_link', 10, 2);
 
 // Handle the download request
 function dpwap_handle_download() {
-    if (isset($_GET['dpwap_download'])) {
+    if (isset($_GET['dpwap_download']) && current_user_can('manage_options')) {
         $post_id = intval($_GET['post_id']);
+         // Verify the nonce
+        if (!isset($_GET['_wpnonce']) || !wp_verify_nonce($_GET['_wpnonce'], 'dpwap_download_post_' . $post_id)) {
+            wp_die(__('Invalid nonce specified', 'dpwap'), __('Error', 'dpwap'), ['response' => 403]);
+        }
+        
         $post_type = sanitize_text_field($_GET['type']);
         $format = 'csv'; // Default to CSV
 
@@ -153,28 +163,30 @@ function dpwap_add_bulk_filters()
 
 // Register bulk action for posts/pages
 function dpwap_register_bulk_download($bulk_actions) {
-    $bulk_actions['dpwap_bulk_download'] = 'Download';
+    if (current_user_can('manage_options')) {
+        $bulk_actions['dpwap_bulk_download'] = 'Download';
+    }
     return $bulk_actions;
 }
 
 // Handle the bulk download
 function dpwap_handle_bulk_download($redirect_to, $doaction, $post_ids) {
-    if ($doaction !== 'dpwap_bulk_download') {
-        return $redirect_to;
-    }
-
-    $data = [];
-    foreach ($post_ids as $post_id) {
-        $post = get_post($post_id);
-        $post_type = $post->post_type;
-        $meta_data = get_post_meta($post_id);
-        $meta_data = array_combine(array_keys($meta_data), array_column($meta_data, '0'));
-        $data[] = ['post' => $post, 'meta' => $meta_data];
-    }
-    $type = !empty($post_type)?$post_type:'post';
-    $filename  = sanitize_key($type).'.csv';
-    dpwap_export_bulk_csv($data,$filename);
-    exit;
+    if ($doaction === 'dpwap_bulk_download' && current_user_can('manage_options')) {
+        check_admin_referer('bulk-posts');
+        $data = [];
+        foreach ($post_ids as $post_id) {
+            $post = get_post($post_id);
+            $post_type = $post->post_type;
+            $meta_data = get_post_meta($post_id);
+            $meta_data = array_combine(array_keys($meta_data), array_column($meta_data, '0'));
+            $data[] = ['post' => $post, 'meta' => $meta_data];
+        }
+        $type = !empty($post_type)?$post_type:'post';
+        $filename  = sanitize_key($type).'.csv';
+        dpwap_export_bulk_csv($data,$filename);
+        exit;
+     }
+     return $redirect_to;
 }
 
 function dpwap_export_bulk_csv($data,$file_name) {
@@ -240,21 +252,30 @@ function dpwap_export_bulk_csv($data,$file_name) {
 }
 
 function dpwap_handle_download_comment() {
-    if (isset($_GET['dpwap_download_comment'])) {
+    if (isset($_GET['dpwap_download_comment']) && current_user_can('manage_options')) {
         $comment_id = intval($_GET['comment_id']);
-        $comment_ids = array($comment_id); 
-        dpwap_export_comments($comment_ids);
+
+        if (!isset($_GET['_wpnonce']) || !wp_verify_nonce($_GET['_wpnonce'], 'dpwap_download_comment_' . $comment_id)) {
+            wp_die(__('Invalid nonce specified', 'dpwap'), __('Error', 'dpwap'), ['response' => 403]);
+        }
+
+        dpwap_export_comments([$comment_id]);
         exit;
     }
+    
 }
 
 add_action('admin_init', 'dpwap_handle_download_comment');
 
 function dpwap_handle_download_user() {
-    if (isset($_GET['dpwap_download_user'])) {
+    if (isset($_GET['dpwap_download_user']) && current_user_can('manage_options')) {
         $user_id = intval($_GET['user_id']);
-        $user_ids = array($user_id); 
-        dpwap_export_users($user_ids);
+
+        if (!isset($_GET['_wpnonce']) || !wp_verify_nonce($_GET['_wpnonce'], 'dpwap_download_user_' . $user_id)) {
+            wp_die(__('Invalid nonce specified', 'dpwap'), __('Error', 'dpwap'), ['response' => 403]);
+        }
+
+        dpwap_export_users([$user_id]);
         exit;
     }
 }
@@ -262,28 +283,38 @@ function dpwap_handle_download_user() {
 add_action('admin_init', 'dpwap_handle_download_user');
 
 function add_download_button_to_comment_row($actions, $comment) {
-    $download_link_csv = add_query_arg(
+     if (current_user_can('manage_options')) {
+    $download_link_csv = wp_nonce_url(
+            add_query_arg(
         [
             'dpwap_download_comment' => 1,
             'comment_id' => $comment->comment_ID,
             'format' => 'csv',
         ],
         admin_url('edit-comments.php')
+        ),
+            'dpwap_download_comment_' . $comment->comment_ID
     );
     
     $actions['download_comment'] = '<a href="' . esc_url($download_link_csv) . '">Download</a>';
+     }
     return $actions;
 }
 add_filter('comment_row_actions', 'add_download_button_to_comment_row', 10, 2);
 
 function add_download_button_to_user_row($actions, $user) {
-    $download_link_csv = add_query_arg([
+     if (current_user_can('manage_options')) {
+        $download_link_csv = wp_nonce_url(
+            add_query_arg([
         'dpwap_download_user' => 1,
         'user_id' => $user->ID,
         'format' => 'csv',
-    ], admin_url('users.php'));
+    ], admin_url('users.php')),
+            'dpwap_download_user_' . $user->ID
+        );
 
     $actions['download_user'] = '<a href="' . esc_url($download_link_csv) . '">Download</a>';
+     }
     return $actions;
 }
 add_filter('user_row_actions', 'add_download_button_to_user_row', 10, 2);
@@ -477,40 +508,4 @@ function dpwap_export_comments_csv($data) {
 
     fclose($output);
     exit;
-    
-    
-//    header('Content-Type: text/csv');
-//    header('Content-Disposition: attachment;filename=comments_export.csv');
-//    $output = fopen('php://output', 'w');
-//
-//    $headers = ['Comment ID', 'Comment', 'Author', 'Date', 'Meta Key', 'Meta Value'];
-//    fputcsv($output, $headers);
-//
-//    foreach ($data as $item) {
-//        $comment = $item['comment'];
-//        $meta = $item['meta'];
-//
-//        $row = [
-//            $comment->comment_ID,
-//            $comment->comment_content,
-//            $comment->comment_author,
-//            $comment->comment_date,
-//        ];
-//
-//        foreach ($meta as $key => $value) {
-//            $unserialized_value = maybe_unserialize($value[0]);
-//            if (is_array($unserialized_value) || is_object($unserialized_value)) {
-//                $unserialized_value = json_encode($unserialized_value);
-//            }
-//            $meta_row = array_merge($row, [$key, $unserialized_value]);
-//            fputcsv($output, $meta_row);
-//        }
-//
-//        if (empty($meta)) {
-//            fputcsv($output, array_merge($row, ['', '']));
-//        }
-//    }
-//
-//    fclose($output);
-//    exit;
 }

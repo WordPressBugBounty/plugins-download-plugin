@@ -3,42 +3,24 @@ Contributors: metagauss
 Tags: plugin, plugins, download-plugin, download-plugin-zip, plugin-zip, download, zip, wordpress, admin, download-plugin-from-wordpress-admin-panel, code, development, plugin-download
 Requires at least: 2.7
 Tested up to: 6.6.1
-Stable tag: 2.2.0
+Stable tag: 2.2.1
 License: GPLv3
 
-Download any plugin from your WordPress backend Plugins page by just one click! Now, download themes, users, blog posts, pages, & more.
+Download any plugin from your WordPress admin panel's Plugins page by just one click! Now, download themes, users, blog posts, pages, custom posts, comments, attachments and much more.
 
 == Description ==
 
 = Download Plugin for WordPress =
-
-1. Just activate this plugin.
-2. You can see Download link below each plugin name on plugins page.
-3. Click on any of them and that plugin’s zip will be downloaded to your computer.
-4. Cheers!
-
-Must-have utility plugin that allows you to download any plugin directly from WordPress Dashboard!
-
-Here is what Download Plugin can do, in just one click:
-1. Download Plugins
-2. Download Themes
-3. Download Users
-4. Download Blog Posts
-5. Download Pages
-6. Download Comments
-7. Download Custom Post Types
-
-
  
-Download custom post types, including WooCommerce products, Easy Digital Downloads, Portfolio Post Types, Slider Revolution, bbPress, WP Job Manager, JetPack, and many more.
+Download Plugin can easily download plugins, themes, users, blog posts, pages, comments, attachments, and more directly from your WordPress dashboard. Download Plugin can also download data from any plugin that uses custom post types, including WooCommerce products, Easy Digital Downloads, Portfolio Post Types, Slider Revolution, bbPress, WP Job Manager, JetPack, and many more.
  
-**Download Plugins**: Download plugins from Plugins page in a zip format. A download button is placed beside each plugin. You can also select multiple plugins and use the bulk download option to download all selected plugins with a single click.
+**Download Plugins**: A download button is placed beside each plugin, allowing you to download the plugin in a zip file format. You can also select multiple plugins and use the bulk download option to download all selected plugins with a single click.
 
-**Download Themes**: Download Themes directly from your WordPress dashboard. You can download themes in a zip file format.
+**Download Themes**: Similar to plugins, a download button is placed beside each theme in your WordPress dashboard. You can download themes in a zip file format.
  
-**Download Users**: Download users, individual user data or multiple users’ metadata in a CSV file format. This feature simplifies user data management, allowing easy download and save user information.
+**Download Users**: With the Download Plugin, you can download individual user data or multiple users’ metadata in a CSV file format. This feature simplifies user data management, allowing easy download and save user information.
  
-**Download Blog Posts**: Download blog posts individually or in bulk with just a click. Download Plugin allows you to download blog posts in a CSV format for backup or migration purposes.
+**Download Blog Posts**: Export blog posts individually or in bulk with just a click. Download Plugin allows you to download blog posts in a CSV format for backup or migration purposes.
 
 **Download Pages**: Download single or multiple pages from your WordPress site. This feature is perfect for backing up your content or transferring pages between sites.
 
@@ -46,21 +28,27 @@ Download custom post types, including WooCommerce products, Easy Digital Downloa
 
 **Download Comments**: Download comments either individually or in bulk. Save user feedback and engagement safely.
 
+1. Just activate this plugin.
+2. You can see <b>Download</b> link below each plugin name on plugins page.
+3. Click on any of them and that plugin's zip will be downloaded to your computer.
+4. Cheers!
 
-WordPress download plugin is a utility plugin that does one thing, and does it perfectly – it download your web assets from your WordPress sites. It may sound simple, but this feature plugs a hole in current set of WordPress plugin functionality. As a site admin you must be aware that you can search and install WordPress plugins directly from the dashboard, or you can upload the plugin as zip files, assuming you received it from another site (for example, a commercial plugin). Once installed, all plugins list themselves inside Dashboard -> Plugins page. After deactivating and deleting them, they simply disappear. All files are removed from the server instantly. WordPress does not allow you to backup or download the plugins before you jettison them from your site. If you also manage your server and are fairly comfortable doing so, you may find a more contrived way to download installed plugins via directory manager app or FTP. Obviously, this requires more than a single click and not for everyone.
+>Must-have utility plugin that allows you to download any plugin directly from WordPress Dashboard! 
 
-What exactly are plugins and how this plugin helps you save time or bail you out from difficult situations? Plugins are files and/ or directories, which are created inside your WordPress installation (defined by WordPress) when you first install them. Both active and deactivated files reside inside them. When you upload zip package of a plugin, WordPress extracts it and places the directory inside it in the plugins folder. Our plugin allows you to reverse the process. It will convert any plugin installed on your site into a zip package ready to be reinstalled later or moved to another site. It accomplishes this by simply adding a new link “Download” under the plugin title to already existing links. It is a single click process and hardly takes any time. Our plugin does not create any other page in the dashboard or clutter menus. It is lightweight, efficient and completely invisible until you need it.
+WordPress download plugin is a utility plugin that does one thing, and does it perfectly. It may sound simple, but this feature plugs a hole in current set of WordPress plugin functionality. As a site admin you must be aware that you can search and install WordPress plugins directly from the dashboard, or you can upload the plugin as zip files, assuming you received it from another site (for example, a commercial plugin). Once installed, all plugins list themselves inside Dashboard -> Plugins page. After deactivating and deleting them, they simply disappear. All files are removed from the server instantly. WordPress does not allow you to backup or download the plugins before you jettison them from your site. If you also manage your server and are fairly comfortable doing so, you may find a more contrived way to download installed plugins via directory manager app or FTP. Obviously, this requires more than a single click and not for everyone. 
+
+What exactly are plugins and how this plugin helps you save time or bail you out from difficult situations? Plugins are files and/ or directories, which are created inside your WordPress installation (defined by WordPress) when you first install them. Both active and deactivated files reside inside them. When you upload zip package of a plugin, WordPress extracts it and places the directory inside it in the plugins folder. Our plugin allows you to reverse the process. It will convert any plugin installed on your site into a zip package ready to be reinstalled later or moved to another site. It accomplishes this by simply adding a new link "Download" under the plugin title to already existing links. It is a single click process and hardly takes any time. Our plugin does not create any other page in the dashboard or clutter menus. It is lightweight, efficient and completely invisible until you need it. 
 
 So why would you need it? While there can be many reasons, here are the primary we think you will find it useful.
 
 = A. Backup =
-The foremost and most common reason – when you wish to make backup of the plugin for future installation.
+The foremost and most common reason - when you wish to make backup of the plugin for future installation.
 
 = B. Premium/ Commercial Plugins =
-If you have purchased the plugin from a vendor site, you may want to make a backup of your new purchase to make sure you have it handy if the vendor is no longer available or your account is expired. Please note: Do check terms of use for commercial plugins on publisher’s site.
+If you have purchased the plugin from a vendor site, you may want to make a backup of your new purchase to make sure you have it handy if the vendor is no longer available or your account is expired. Please note: Do check terms of use for commercial plugins on publisher's site.
 
 = C. Migrating to a different site =
-So, you have found yourselves dependent on some specific plugins that you want to use on all of your sites? You can download these plugins from your current site do a folder on your hard disk from where you can upload to your other sites.
+So you have found yourselves dependent on some specific plugins that you want to use on all of your sites? You can download these plugins from your current site do a folder on your hard disk from where you can upload to your other sites.
 
 = D. Preserving Changes =
 If you DIY type and made modifications to plugin files to suit your requirements, you will want to make sure you have an archived copy of the plugin if the files get overwritten by an update etc.
@@ -70,6 +58,8 @@ If you DIY type and made modifications to plugin files to suit your requirements
 [Checkout Download plugin guide](https://metagauss.com/download-plugin-guide/) for more information.
 
 = Recommended Plugins (Free Download From WordPress.org) =
+
+[Download Theme Plugin:](https://wordpress.org/plugins/download-theme/) allows you to download any theme from your WordPress admin panel's Appearance page.
 
 [User Registration and Login Plugin:](https://wordpress.org/plugins/custom-registration-form-builder-with-submission-manager/) Take total control of end-to-end user registration process on your site with RegistrationMagic plugin.
 
@@ -87,6 +77,9 @@ If you DIY type and made modifications to plugin files to suit your requirements
 1. Download link below each plugin name. Click on any of them and that plugin's zip will be downloaded to your computer.
 
 == Changelog ==
+
+= 2.2.1 =
+* Fixed: Security issue.
 
 = 2.2.0: August 21, 2024 =
 * Added: Option to download single user.
