@@ -234,7 +234,7 @@ class Base {
             $root_path = realpath( $folder_path );
             $zip = new ZipArchive();
             $zip->open( $folder_path.'.zip', ZipArchive::CREATE | ZipArchive::OVERWRITE );
-            $files = new RecursiveIteratorIterator(
+            /* $files = new RecursiveIteratorIterator(
                 new RecursiveDirectoryIterator( $root_path ),
                 RecursiveIteratorIterator::LEAVES_ONLY
             );
@@ -244,7 +244,40 @@ class Base {
                     $relative_path = substr( $file_path, strlen( $root_path ) + 1 );
                     $zip->addFile( $file_path, $relative_path );
                 }
+            } */
+            
+            $plugin_slug = basename($root_path); // Use the folder name as the plugin slug
+            $files = new RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($root_path, \FilesystemIterator::SKIP_DOTS),
+                RecursiveIteratorIterator::LEAVES_ONLY
+            );
+            
+            foreach ($files as $file) {
+                // Skip hidden files and directories
+                $file_path = $file->getRealPath();
+                $relative_path = substr($file_path, strlen($root_path) + 1);
+                 // Add the base folder to the file paths inside the zip
+                $relative_path_with_slug = $plugin_slug . '/' . $relative_path;
+                // Skip any file or directory starting with a dot
+                $parts = explode(DIRECTORY_SEPARATOR, $relative_path);
+                $skip = false;
+                foreach ($parts as $part) {
+                    if (substr($part, 0, 1) === '.') {
+                        $skip = true;
+                        break;
+                    }
+                }
+                if ($skip) {
+                    continue; // Skip this file or directory
+                }
+
+                if (!$file->isDir()) {
+                    $zip->addFile($file_path, $relative_path_with_slug);
+                }
             }
+            
+            
+            
             $zip->close();
             if( $folder == 2 ){
                 $this->dpwap_delete_temp_folder( $folder_path );
