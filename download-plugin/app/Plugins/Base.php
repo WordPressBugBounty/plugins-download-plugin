@@ -153,10 +153,10 @@ class Base
         }
         // Add Customize link
         $plugin_name = get_plugin_data(WP_PLUGIN_DIR . '/' . $plugin_file)['Name'];
-        $customize_link = array(
-            '<span class="dpwap_customize-wrap">
-        <a href="#" class="dpwap_customize_link" data-plugin="' . esc_attr($plugin_name) . '">' . esc_html__('Customize', 'download-plugin') . '</a></span>',
-        );
+        // $customize_link = array(
+        //     '<span class="dpwap_customize-wrap">
+        // <a href="#" class="dpwap_customize_link" data-plugin="' . esc_attr($plugin_name) . '">' . esc_html__('Customize', 'download-plugin') . '</a></span>',
+        // );
         $nonce = wp_create_nonce('bulk-plugins');
         $pluginDownloadLink = admin_url('admin.php?page=dpwap_plugin&dpwap_plugin_download=' . $path . '&f=' . $folder . '&_wpnonce=' . $nonce);
         $download_link = array(
@@ -166,7 +166,7 @@ class Base
 
         
 
-        return array_merge($links, $customize_link, $download_link);
+        return array_merge($links, $download_link);
     }
 
     public function add_download_plugin_bulk_actions($bulk_array)
