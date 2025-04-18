@@ -21,7 +21,9 @@ class Main
 
         add_action('admin_enqueue_scripts', array($this, 'dpwap_load_common_admin_scripts'));
 
-        add_action('admin_notices', array($this, 'dpwap_general_admin_notice'));
+        add_action('admin_notices', array($this, 'dpwap_general_admin_notice',));
+        add_action('admin_notices', array($this, 'dpwap_general_promote_notice',));
+        add_action('wp_ajax_dpwap_dismiss_eventprime_promotion', array($this, 'dpwap_dismiss_eventprime_promotion',));
 
         $plugins = new pluginBase();
         $plugins->setup();
@@ -178,7 +180,7 @@ class Main
                 </div>
             </div>
         </div>
-<?php
+    <?php
     }
 
     function submit_customization_request()
@@ -281,7 +283,7 @@ class Main
     public function dpwap_load_common_admin_scripts()
     {
         wp_enqueue_script('dpwap_common_js', DPWAP_URL . 'assets/js/dpwap-common.js', array(), DPWAP_VERSION);
-        wp_localize_script('dpwap_common_js', 'admin_vars', array('admin_url' => admin_url(), 'ajax_url' => admin_url('admin-ajax.php')));
+        wp_localize_script('dpwap_common_js', 'admin_vars', array('admin_url' => admin_url(), 'ajax_url' => admin_url('admin-ajax.php'),  'nonce' => wp_create_nonce('dpwap_secure_action')));
         wp_enqueue_style('dpwap_common_css', DPWAP_URL . 'assets/css/dpwap-common.css', array(), DPWAP_VERSION);
     }
 
@@ -307,6 +309,83 @@ class Main
         }
     }
 
+    public function dpwap_general_promote_notice()
+    {
+
+        $installed_plugins = get_plugins();
+
+        // Check if EventPrime is installed (active or inactive)
+        if (class_exists('Eventprime_Event_Calendar_Management') || isset($installed_plugins['eventprime-event-calendar-management/event-prime.php'])) {
+            return;
+        }
+
+        $notice_dismissed = get_option('dpwap_dismiss_eventprime_promotion', false);
+
+        if ($notice_dismissed) {
+            return;
+        }
+
+        // Show only on plugin pages or plugins.php
+        $install_url = wp_nonce_url(
+            self_admin_url('update.php?action=install-plugin&plugin=eventprime-event-calendar-management'),
+            'install-plugin_eventprime-event-calendar-management'
+        );
+
+
+    ?>
+        <div class="notice notice-info is-dismissible dpwap-dismissible" id="dpwap_eventprime_promotion">
+           
+            <div class="dpwap_eventprime_promotion-wrap">
+                     
+                         <div class="dpwap_eventprime_promotion-text">
+                             <span>
+                                <a href="<?php echo esc_url($install_url); ?>"
+                                   class="button button-primary install-eventprime"
+                                   aria-label="<?php esc_attr_e('Install EventPrime Plugin', 'download-plugin'); ?>"
+                                   rel="noopener noreferrer">
+                                       <?php esc_html_e('Click here', 'download-plugin'); ?>
+                                </a>
+                               </span>
+                             
+                             <div><?php esc_html_e('Plan and manage events on your site with EventPrime - our powerful events plugin with booking, calendar, and ticketing features.', 'download-plugin'); ?>
+                                 <div><em><?php esc_html_e('Brought to you by the team behind ', 'download-plugin'); ?> <strong><?php esc_html_e('Download Plugin.', 'download-plugin'); ?></strong></em></div>
+                             </div>
+                             
+                         </div>
+                   
+                
+               
+                  
+                </div>
+        </div>
+
+<style>
+    .dpwap_eventprime_promotion-wrap {
+    width: fit-content;
+    padding: 10px 0px;
+}
+
+.dpwap_eventprime_promotion-text {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+</style>
+<?php
+
+    }
+
+    // AJAX handler for dismissing notice
+    public function dpwap_dismiss_eventprime_promotion()
+    {
+        check_ajax_referer('dpwap_secure_action', 'nonce');
+        if (current_user_can('manage_options')) {
+            update_option('dpwap_dismiss_eventprime_promotion', true);
+        }
+        wp_die();
+    }
+
+
     /**
      * Hide admin notice
      */
@@ -316,3 +395,5 @@ class Main
         wp_send_json_success('Notice Dismissed');
     }
 }
+
+

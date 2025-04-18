@@ -874,3 +874,15 @@
     margin-left: 2px;
     margin-top: -2px;
 } */
+
+
+.dpwap_eventprime_promotion-wrap {
+    width: fit-content;
+    padding: 10px 0px;
+}
+
+.dpwap_eventprime_promotion-text {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}

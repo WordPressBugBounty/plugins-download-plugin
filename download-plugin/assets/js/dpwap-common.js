@@ -29,5 +29,26 @@
       });  
     }, 1000);
 
+
+    $(document).on('click', '.dpwap-dismissible .notice-dismiss', function() {
+        dpwapNotice()
+    });
+
+  // Handle install button click
+  $(document).on('click', '.install-eventprime', function() {
+    dpwapNotice()
+  });
+
+  function dpwapNotice() {
+      var data = {
+          action: 'dpwap_dismiss_eventprime_promotion',
+          nonce: admin_vars.nonce
+      };
+      $.post(admin_vars.ajax_url, data, function(response) {
+          if (response.success) {
+            
+          }
+      });
+    }
   });
 })(jQuery);
