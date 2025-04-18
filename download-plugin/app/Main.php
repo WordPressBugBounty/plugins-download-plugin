@@ -347,15 +347,7 @@ class Main
                                 </a>
                                </span>
                              
-                             <div><?php esc_html_e('Plan and manage events on your site with EventPrime - our powerful events plugin with booking, calendar, and ticketing features.', 'download-plugin'); ?>
-                                 <div><em><?php esc_html_e('Brought to you by the team behind ', 'download-plugin'); ?> <strong><?php esc_html_e('Download Plugin.', 'download-plugin'); ?></strong></em></div>
-                             </div>
-                             
-                         </div>
-                   
-                
-               
-                  
+                               <div><?php esc_html_e('to add an events calendar to your site. From the team behind', 'download-plugin'); ?> <strong><?php esc_html_e('Download Plugin', 'download-plugin'); ?></strong>.</div>                         </div>
                 </div>
         </div>
 
