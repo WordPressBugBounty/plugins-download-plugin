@@ -21,7 +21,7 @@ class Main
 
         add_action('admin_enqueue_scripts', array($this, 'dpwap_load_common_admin_scripts'));
 
-        add_action('admin_notices', array($this, 'dpwap_general_admin_notice',));
+        // add_action('admin_notices', array($this, 'dpwap_general_admin_notice',));
         add_action('admin_notices', array($this, 'dpwap_general_promote_notice',));
         add_action('wp_ajax_dpwap_dismiss_eventprime_promotion', array($this, 'dpwap_dismiss_eventprime_promotion',));
 
@@ -298,16 +298,16 @@ class Main
     /**
      * Admin notice
      */
-    public function dpwap_general_admin_notice()
-    {
-        $dpwap = dpwap_plugin_loaded();
-        $get_dismiss_option = get_option('dpwap_dismiss_offer_notice', false);
-        if (empty($dpwap->extensions) && empty($get_dismiss_option)) {
-            echo '<div class="dpwap-notice-pre notice notice-info is-dismissible">
-                <p><b>Download Plugin</b> now has add-on for downloading and uploading your website\'s user accounts. <a href="https://metagauss.com/wordpress-users-import-export-plugin/?utm_source=dp_plugin&utm_medium=admin_notice&utm_campaign=download_users_addon" target="_new">Click here </a>to get it now!</p>
-            </div>';
-        }
-    }
+    // public function dpwap_general_admin_notice()
+    // {
+    //     $dpwap = dpwap_plugin_loaded();
+    //     $get_dismiss_option = get_option('dpwap_dismiss_offer_notice', false);
+    //     if (empty($dpwap->extensions) && empty($get_dismiss_option)) {
+    //         // echo '<div class="dpwap-notice-pre notice notice-info is-dismissible">
+    //         //     <p><b>Download Plugin</b> now has add-on for downloading and uploading your website\'s user accounts. <a href="https://metagauss.com/wordpress-users-import-export-plugin/?utm_source=dp_plugin&utm_medium=admin_notice&utm_campaign=download_users_addon" target="_new">Click here </a>to get it now!</p>
+    //         // </div>';
+    //     }
+    // }
 
     public function dpwap_general_promote_notice()
     {
