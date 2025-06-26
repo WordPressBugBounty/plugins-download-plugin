@@ -280,6 +280,11 @@ class Dpwapuploader
 	}	
 		
 	public function dpwap_plugin_locInstall(){
+
+        if ( !current_user_can( 'manage_options' ) ) {
+            echo esc_html__( 'You do not have sufficient permissions to upload plugins.', 'download-plugin' );
+            return;
+        }
         // Increase the resources
         @ini_set( 'memory_limit', '1024M' );
         @ini_set( 'upload_max_filesize', '640M' );
@@ -294,6 +299,13 @@ class Dpwapuploader
                 $tmpFilePath = $_FILES['dpwap_locFiles']['tmp_name'][$i];
                 //Make sure we have a filepath
                 if ( $tmpFilePath != "" ) {
+
+                    // Validate ZIP using WordPress core check
+                    $fileinfo = wp_check_filetype_and_ext($tmpFilePath, $dpwap_locFilenm);
+                    if (empty($fileinfo['ext']) || strtolower($fileinfo['ext']) !== 'zip') {
+                        echo '<b>' . esc_html($dpwap_locFilenm) . '</b>:' . esc_html__('Upload failed. Only valid ZIP plugin files are allowed.', 'download-plugin') . '</p>';
+                        return;
+                    }
                     //Setup our new file path
                     $newFilePath = DPWAPUPLOADDIR_PATH.'/dpwap_logs/files/tmp/' . $dpwap_locFilenm;
                     //Upload the file into the temp dir
