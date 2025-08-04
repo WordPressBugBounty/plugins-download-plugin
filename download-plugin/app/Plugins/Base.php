@@ -402,7 +402,8 @@ class Base
             $dpwap_plugins = maybe_unserialize(get_option('dpwap_downloads_url'));
             if (!empty($dpwap_plugins)) {
                 foreach ($dpwap_plugins as $pluginUrl) {
-                    $downUrl = site_url() . "/wp-content/uploads/dpwap_plugins/" . $pluginUrl; ?>
+                    $uploads = wp_upload_dir();
+                    $downUrl = $uploads['baseurl'] . '/dpwap_plugins/' . $pluginUrl; ?>
                     <script language="javascript" type="text/javascript">
                         jQuery(document).ready(function() {
                             var iframe = document.createElement('iframe');
