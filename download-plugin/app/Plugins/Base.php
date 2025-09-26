@@ -307,6 +307,7 @@ class Base
             // Download Zip
             $zip_file = $folder_path . '.zip';
             if (file_exists($zip_file)) {
+                while (ob_get_level() > 0) { ob_end_clean(); }
                 header('Content-Description: File Transfer');
                 header('Content-Type: application/octet-stream');
                 header('Content-Disposition: attachment; filename="' . basename($zip_file) . '"');
@@ -315,6 +316,7 @@ class Base
                 header('Pragma: public');
                 header('Content-Length: ' . filesize($zip_file));
                 header('Set-Cookie:fileLoading=true');
+                flush();
                 readfile($zip_file);
                 unlink($zip_file);
                 exit;
