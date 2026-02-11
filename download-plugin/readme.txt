@@ -78,7 +78,7 @@ If you DIY type and made modifications to plugin files to suit your requirements
 
 == Changelog ==
 
-= 2.3.1: September 27, 2025 =
+= 2.3.1: September 26, 2025 =
 * Fixed: "headers already sent" issue when downloading plugin ZIPs in some scenarios.
 * Fixed: Invalid ZIP download caused by output buffering on some websites.
 * Enhancement: Added safer output handling before file streaming.
