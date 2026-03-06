@@ -42,6 +42,7 @@ class Base {
             $root_path      = realpath( $folder_path );
             $zip = new ZipArchive();
             $zip->open( $folder_path.'.zip', ZipArchive::CREATE | ZipArchive::OVERWRITE );
+            $theme_slug = basename( $root_path );
             $files = new RecursiveIteratorIterator(
                 new RecursiveDirectoryIterator($root_path),
                 RecursiveIteratorIterator::LEAVES_ONLY
@@ -49,8 +50,8 @@ class Base {
 		    foreach ( $files as $name => $file ) {
 		        if ( !$file->isDir() ) {
 		        	$file_path	   = $file->getRealPath();
-		            $relative_path = substr( $file_path, strlen( $root_path ) + 1 );
-		            $zip->addFile( $file_path, $relative_path );
+                    $relative_path = substr( $file_path, strlen( $root_path ) + 1 );
+                    $zip->addFile( $file_path, $theme_slug . '/' . $relative_path );
 		        }
 		    }		
 		    $zip->close();		

@@ -3,7 +3,7 @@ Contributors: metagauss
 Tags: plugin, plugins, download-plugin, download-plugin-zip, plugin-zip, download, zip, wordpress, admin, download-plugin-from-wordpress-admin-panel, code, development, plugin-download
 Requires at least: 2.7
 Tested up to: 6.8
-Stable tag: 2.3.1
+Stable tag: 2.4.0
 License: GPLv3
 
 Download any plugin from your WordPress admin panel's Plugins page by just one click! Now, download themes, users, blog posts, pages, custom posts, comments, attachments and much more.
@@ -78,7 +78,10 @@ If you DIY type and made modifications to plugin files to suit your requirements
 
 == Changelog ==
 
-= 2.3.1: September 26, 2025 =
+= 2.4.0: March 6, 2026 =
+* Fixed: Downloaded theme ZIP now includes the top-level theme folder.
+
+= 2.3.1: September 27, 2025 =
 * Fixed: "headers already sent" issue when downloading plugin ZIPs in some scenarios.
 * Fixed: Invalid ZIP download caused by output buffering on some websites.
 * Enhancement: Added safer output handling before file streaming.
