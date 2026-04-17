@@ -20,10 +20,8 @@ class Main
         $this->loadTextdomain();
 
         add_action('admin_enqueue_scripts', array($this, 'dpwap_load_common_admin_scripts'));
-
-        // add_action('admin_notices', array($this, 'dpwap_general_admin_notice',));
-        add_action('admin_notices', array($this, 'dpwap_general_promote_notice',));
-        add_action('wp_ajax_dpwap_dismiss_eventprime_promotion', array($this, 'dpwap_dismiss_eventprime_promotion',));
+        add_action('admin_notices', array($this, 'dpwap_render_pro_promo_notice'));
+        add_action('admin_footer', array($this, 'dpwap_render_pro_welcome_modal'));
 
         $plugins = new pluginBase();
         $plugins->setup();
@@ -35,8 +33,10 @@ class Main
     public function addActions()
     {
         add_action('admin_init', array($this, 'dpwap_plugin_redirect'));
+        add_action('admin_init', array($this, 'dpwap_refresh_pro_promo_state'));
         add_action('admin_menu', array($this, 'dpwap_load_menus'));
         add_action('wp_ajax_dpwap_dismiss_notice_action', array($this, 'dpwap_dismiss_notice_action'));
+        add_action('wp_ajax_dpwap_dismiss_admin_notice', array($this, 'dpwap_dismiss_admin_notice'));
         add_action('admin_footer', [$this, 'dpwap_customize_modal']);
         add_action('wp_ajax_dpwap_customize_plugin', [$this, 'submit_customization_request']);
     }
@@ -72,9 +72,28 @@ class Main
     {
         if (get_option('download_plugin_do_activation_redirect', false)) {
             delete_option('download_plugin_do_activation_redirect');
-            wp_redirect(admin_url("admin.php?page=dpwap_plugin"));
+            if ( wp_doing_ajax() ) {
+                return;
+            }
+
+            wp_safe_redirect( admin_url( 'plugins.php' ) );
             exit;
         }
+    }
+
+    public function dpwap_refresh_pro_promo_state()
+    {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        $stored_version = (string) get_option('dpwap_pro_notice_version', '');
+        if ($stored_version === DPWAP_VERSION) {
+            return;
+        }
+
+        update_option('dpwap_pro_notice_version', DPWAP_VERSION);
+        update_option('dpwap_pro_notice_cooldown_until', 0);
     }
 
     public function dpwap_load_menus()
@@ -282,7 +301,7 @@ class Main
 
     public function dpwap_load_common_admin_scripts()
     {
-        wp_enqueue_script('dpwap_common_js', DPWAP_URL . 'assets/js/dpwap-common.js', array(), DPWAP_VERSION);
+        wp_enqueue_script('dpwap_common_js', DPWAP_URL . 'assets/js/dpwap-common.js', array('jquery'), DPWAP_VERSION, true);
         wp_localize_script('dpwap_common_js', 'admin_vars', array('admin_url' => admin_url(), 'ajax_url' => admin_url('admin-ajax.php'),  'nonce' => wp_create_nonce('dpwap_secure_action')));
         wp_enqueue_style('dpwap_common_css', DPWAP_URL . 'assets/css/dpwap-common.css', array(), DPWAP_VERSION);
     }
@@ -309,78 +328,188 @@ class Main
     //     }
     // }
 
-    public function dpwap_general_promote_notice()
+
+    protected function dpwap_is_high_intent_screen()
     {
+        global $pagenow;
 
-        $installed_plugins = get_plugins();
-
-        // Check if EventPrime is installed (active or inactive)
-        if (class_exists('Eventprime_Event_Calendar_Management') || isset($installed_plugins['eventprime-event-calendar-management/event-prime.php'])) {
-            return;
+        if (in_array($pagenow, array('plugins.php', 'plugin-install.php'), true)) {
+            return true;
         }
 
-        $notice_dismissed = get_option('dpwap_dismiss_eventprime_promotion', false);
-
-        if ($notice_dismissed) {
-            return;
+        $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+        if (!$screen || empty($screen->base)) {
+            return false;
         }
 
-        // Show only on plugin pages or plugins.php
-        $install_url = wp_nonce_url(
-            self_admin_url('update.php?action=install-plugin&plugin=eventprime-event-calendar-management'),
-            'install-plugin_eventprime-event-calendar-management'
-        );
-
-
-    ?>
-        <div class="notice notice-info is-dismissible dpwap-dismissible" id="dpwap_eventprime_promotion">
-           
-            <div class="dpwap_eventprime_promotion-wrap">
-                     
-                         <div class="dpwap_eventprime_promotion-text">
-                             <span>
-                                <a href="<?php echo esc_url($install_url); ?>"
-                                   class="button button-primary install-eventprime"
-                                   aria-label="<?php esc_attr_e('Install EventPrime Plugin', 'download-plugin'); ?>"
-                                   rel="noopener noreferrer">
-                                       <?php esc_html_e('Click here', 'download-plugin'); ?>
-                                </a>
-                               </span>
-                             
-                               <div><?php esc_html_e('to add an events calendar to your site. From the team behind', 'download-plugin'); ?> <strong><?php esc_html_e('Download Plugin', 'download-plugin'); ?></strong>.</div>                         </div>
-                </div>
-        </div>
-
-<style>
-    .dpwap_eventprime_promotion-wrap {
-    width: fit-content;
-    padding: 10px 0px;
-}
-
-.dpwap_eventprime_promotion-text {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-</style>
-<?php
-
+        return in_array($screen->base, array('plugins', 'plugins-network', 'plugin-install'), true);
     }
 
-    // AJAX handler for dismissing notice
-    public function dpwap_dismiss_eventprime_promotion()
+    public function dpwap_render_pro_promo_notice()
+    {
+        if (!$this->dpwap_should_show_pro_notice()) {
+            return;
+        }
+
+        $pro_url = 'https://theeventprime.com/checkout/?download_id=43730&edd_action=add_to_cart&edd_options[price_id][]=1';
+        ?>
+        <div class="notice notice-info is-dismissible dpwap-dismissible dpwap-pro-notice" data-notice="pro-notice">
+            <div class="dpwap-pro-notice__icon" aria-hidden="true">
+                <img src="<?php echo esc_url(DPWAP_URL . 'assets/images/dpwap-pro-notice-backup.svg'); ?>" alt="" class="dpwap-pro-symbol" />
+            </div>
+            <div class="dpwap-pro-notice__content">
+                <h2 class="dpwap-pro-notice__title"><?php esc_html_e('Need full backups, imports, and recovery tools?', 'download-plugin'); ?></h2>
+                <p class="dpwap-pro-notice__text"><?php esc_html_e('Download Plugin Pro helps you back up your site, move content in and out, and restore things when you need them. It adds backup export and restore, CSV import and export, media ZIP import, and backup package recovery tools.', 'download-plugin'); ?></p>
+                <div class="dpwap-pro-notice__actions">
+                    <a href="<?php echo esc_url($pro_url); ?>" target="_blank" rel="noopener noreferrer" class="button button-primary dpwap-pro-button">
+                        <?php esc_html_e('Upgrade to Pro', 'download-plugin'); ?>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+
+    protected function dpwap_should_show_pro_notice()
+    {
+        if (!current_user_can('manage_options') || !$this->dpwap_is_high_intent_screen()) {
+            return false;
+        }
+
+        if (function_exists('dpwap_is_pro_active') && dpwap_is_pro_active()) {
+            return false;
+        }
+
+        if ($this->dpwap_should_show_welcome_modal()) {
+            return false;
+        }
+
+        $cooldown_until = (int) get_option('dpwap_pro_notice_cooldown_until', 0);
+        return $cooldown_until <= time();
+    }
+
+    protected function dpwap_should_show_welcome_modal()
+    {
+        global $pagenow;
+
+        $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+        if (
+            !current_user_can('manage_options') ||
+            (
+                'plugins.php' !== $pagenow &&
+                (
+                    !$screen ||
+                    !in_array($screen->base, array('plugins', 'plugins-network'), true)
+                )
+            ) ||
+            dpwap_is_pro_active()
+        ) {
+            return false;
+        }
+
+        return (bool) get_option('dpwap_pro_welcome_modal_pending', false);
+    }
+
+    public function dpwap_render_pro_welcome_modal()
+    {
+        if (!$this->dpwap_should_show_welcome_modal()) {
+            return;
+        }
+
+        $pro_url = 'https://theeventprime.com/checkout/?download_id=43730&edd_action=add_to_cart&edd_options[price_id][]=1';
+        ?>
+        <div id="dpwap-pro-welcome-modal" class="dpwap-pro-modal" aria-hidden="true">
+            <div class="dpwap-pro-modal__backdrop"></div>
+            <div class="dpwap-pro-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="dpwap-pro-welcome-title">
+                <div class="dpwap-pro-modal__accent" aria-hidden="true"></div>
+                <button type="button" class="dpwap-pro-modal__close" data-action="dismiss" aria-label="<?php esc_attr_e('Close dialog', 'download-plugin'); ?>">
+                    <span aria-hidden="true">&#10005;</span>
+                </button>
+                <h2 id="dpwap-pro-welcome-title"><?php esc_html_e('Welcome to Download Plugin', 'download-plugin'); ?></h2>
+                <p class="dpwap-pro-modal__intro"><?php esc_html_e('Start with the Free Version for fast plugin downloads and quick site administration, then upgrade to Pro for backup, restore, import, export, and recovery workflows.', 'download-plugin'); ?></p>
+                <div class="dpwap-pro-modal__grid">
+                    <div class="dpwap-pro-modal__column">
+                        <h3><?php esc_html_e('What you get in the Free Version', 'download-plugin'); ?></h3>
+                        <ul>
+                            <li>
+                                <strong><?php esc_html_e('Download single plugins with one click', 'download-plugin'); ?></strong>
+                                <span><?php esc_html_e('Save any installed plugin as a ZIP file directly from the Plugins screen.', 'download-plugin'); ?></span>
+                            </li>
+                            <li>
+                                <strong><?php esc_html_e('Download multiple plugins in bulk', 'download-plugin'); ?></strong>
+                                <span><?php esc_html_e('Select several plugins and download them together from the bulk actions menu.', 'download-plugin'); ?></span>
+                            </li>
+                            <li>
+                                <strong><?php esc_html_e('Upload and install multiple plugins', 'download-plugin'); ?></strong>
+                                <span><?php esc_html_e('Bring in plugin ZIP files quickly from the Plugins Add New screen.', 'download-plugin'); ?></span>
+                            </li>
+                            <li>
+                                <strong><?php esc_html_e('Download themes, users, content, and media', 'download-plugin'); ?></strong>
+                                <span><?php esc_html_e('Work with themes, users, posts, pages, comments, attachments, and custom post types.', 'download-plugin'); ?></span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="dpwap-pro-modal__column dpwap-pro-modal__column--accent">
+                        <h3><?php esc_html_e('What Pro adds', 'download-plugin'); ?></h3>
+                        <ul>
+                            <li>
+                                <strong><?php esc_html_e('Full site backup export and restore', 'download-plugin'); ?></strong>
+                                <span><?php esc_html_e('Create downloadable backups and restore them when you need a recovery path.', 'download-plugin'); ?></span>
+                            </li>
+                            <li>
+                                <strong><?php esc_html_e('CSV import and export for content', 'download-plugin'); ?></strong>
+                                <span><?php esc_html_e('Move posts, pages, users, comments, and taxonomies in and out of your site.', 'download-plugin'); ?></span>
+                            </li>
+                            <li>
+                                <strong><?php esc_html_e('Media ZIP import with useful metadata', 'download-plugin'); ?></strong>
+                                <span><?php esc_html_e('Import media files with title, caption, alt text, description, and taxonomy details.', 'download-plugin'); ?></span>
+                            </li>
+                            <li>
+                                <strong><?php esc_html_e('Backup package management and recovery workflow', 'download-plugin'); ?></strong>
+                                <span><?php esc_html_e('Keep recent backup packages organized for easier recovery and reuse.', 'download-plugin'); ?></span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <p class="dpwap-pro-modal__note"><?php esc_html_e('Pro is the natural next step if you need stronger backup, migration, import, and recovery tools, and you can start with the Free Version and upgrade anytime.', 'download-plugin'); ?></p>
+                <div class="dpwap-pro-modal__actions">
+                    <a href="<?php echo esc_url($pro_url); ?>" target="_blank" rel="noopener noreferrer" class="button button-primary dpwap-pro-button">
+                        <?php esc_html_e('Upgrade to Pro', 'download-plugin'); ?>
+                    </a>
+                    <button type="button" class="button button-secondary dpwap-pro-button-secondary" data-action="dismiss">
+                        <?php esc_html_e('Continue with the Free Version', 'download-plugin'); ?>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+
+    public function dpwap_dismiss_admin_notice()
     {
         check_ajax_referer('dpwap_secure_action', 'nonce');
-        if (current_user_can('manage_options')) {
-            update_option('dpwap_dismiss_eventprime_promotion', true);
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error();
         }
-        wp_die();
+
+        $notice = isset($_POST['notice']) ? sanitize_text_field(wp_unslash($_POST['notice'])) : '';
+        switch ($notice) {
+            case 'pro-notice':
+                $dismissed_at = (int) get_option('dpwap_pro_notice_dismissed_at', 0);
+                $cooldown_days = $dismissed_at > 0 ? 90 : 30;
+                $now = time();
+                update_option('dpwap_pro_notice_dismissed_at', $now);
+                update_option('dpwap_pro_notice_cooldown_until', $now + ($cooldown_days * DAY_IN_SECONDS));
+                break;
+            case 'welcome-modal':
+                update_option('dpwap_pro_welcome_modal_pending', 0);
+                update_option('dpwap_pro_welcome_modal_dismissed', 1);
+                break;
+        }
+
+        wp_send_json_success();
     }
 
-
-    /**
-     * Hide admin notice
-     */
     public function dpwap_dismiss_notice_action()
     {
         add_option('dpwap_dismiss_offer_notice', true);

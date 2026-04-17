@@ -31,23 +31,42 @@
 
 
     $(document).on('click', '.dpwap-dismissible .notice-dismiss', function() {
-        dpwapNotice()
+        var notice = $(this).closest('.dpwap-dismissible').data('notice');
+        if (!notice) {
+            return;
+        }
+        $.post(admin_vars.ajax_url, {
+            action: 'dpwap_dismiss_admin_notice',
+            nonce: admin_vars.nonce,
+            notice: notice
+        });
     });
 
-  // Handle install button click
-  $(document).on('click', '.install-eventprime', function() {
-    dpwapNotice()
-  });
+    var proModal = $('#dpwap-pro-welcome-modal');
+    if (proModal.length) {
+      $('body').addClass('dpwap-pro-modal-open');
+      window.setTimeout(function() {
+        proModal.addClass('is-visible').attr('aria-hidden', 'false');
+      }, 30);
 
-  function dpwapNotice() {
-      var data = {
-          action: 'dpwap_dismiss_eventprime_promotion',
-          nonce: admin_vars.nonce
+      var dismissWelcomeModal = function() {
+        proModal.removeClass('is-visible').attr('aria-hidden', 'true');
+        $('body').removeClass('dpwap-pro-modal-open');
+
+        $.post(admin_vars.ajax_url, {
+          action: 'dpwap_dismiss_admin_notice',
+          nonce: admin_vars.nonce,
+          notice: 'welcome-modal'
+        });
       };
-      $.post(admin_vars.ajax_url, data, function(response) {
-          if (response.success) {
-            
-          }
+
+      $(document).on('click', '#dpwap-pro-welcome-modal [data-action="dismiss"], #dpwap-pro-welcome-modal .dpwap-pro-modal__backdrop', dismissWelcomeModal);
+
+      $(document).on('keydown.dpwapProModal', function(event) {
+        if (event.key === 'Escape') {
+          dismissWelcomeModal();
+          $(document).off('keydown.dpwapProModal');
+        }
       });
     }
   });
