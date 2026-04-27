@@ -160,11 +160,9 @@ class Base
         $nonce = wp_create_nonce('bulk-plugins');
         $pluginDownloadLink = admin_url('admin.php?page=dpwap_plugin&dpwap_plugin_download=' . $path . '&f=' . $folder . '&_wpnonce=' . $nonce);
         $download_link = array(
-            '<span class="dpwap_download-wrap">
+            'dpwap_download' => '<span class="dpwap_download-wrap">
             <a href="' . esc_url($pluginDownloadLink) . '" class="dpwap_download_link">' . esc_html__('Download', 'download-plugin') . '</a></span>',
         );
-
-        
 
         return array_merge($links, $download_link);
     }
@@ -319,6 +317,7 @@ class Base
                 flush();
                 readfile($zip_file);
                 unlink($zip_file);
+                \DPWAP\Main::dpwap_record_free_download();
                 exit;
             }
         }
@@ -393,6 +392,7 @@ class Base
             }
         }
         $zip->close();
+        \DPWAP\Main::dpwap_record_free_download();
     }
 
     public function dpwap_plugin_multiple_download_action()

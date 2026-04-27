@@ -2,8 +2,8 @@
 Contributors: metagauss
 Tags: plugin, plugins, download-plugin, download-plugin-zip, plugin-zip, download, zip, wordpress, admin, download-plugin-from-wordpress-admin-panel, code, development, plugin-download
 Requires at least: 2.7
-Tested up to: 6.8
-Stable tag: 2.4.1
+Tested up to: 6.9
+Stable tag: 2.4.2
 License: GPLv3
 
 Download any plugin from your WordPress admin panel's Plugins page by just one click! Now, download themes, users, blog posts, pages, custom posts, comments, attachments and much more.
@@ -55,7 +55,7 @@ If you DIY type and made modifications to plugin files to suit your requirements
 
 = Starter Guide =
 
-[Checkout Download plugin guide](https://metagauss.com/download-plugin-guide/) for more information.
+[Checkout Download plugin guide](https://theeventprime.com/how-to-use-download-plugin-in-wordpress/) for more information.
 
 = Recommended Plugins (Free Download From WordPress.org) =
 
@@ -78,7 +78,10 @@ If you DIY type and made modifications to plugin files to suit your requirements
 
 == Changelog ==
 
-= 2.4.1 =
+= 2.4.2: April 27, 2026 =
+* Fixed: Minor issue.
+
+= 2.4.1: April 17, 2026 =
 * Fixed: UI improvements.
 * Introduced Pro version support.
 

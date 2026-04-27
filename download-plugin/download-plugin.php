@@ -3,7 +3,7 @@
 *  Plugin Name: Download Plugin
 *  Plugin URI: http://metagauss.com
 *  Description: Download any plugin from your WordPress admin panel's Plugins page by just one click! Now, download themes, users, blog posts, pages, custom posts, comments, attachments and much more.
-*  Version: 2.4.1
+*  Version: 2.4.2
 *  Author: Download Plugin
 *  Author URI: https://profiles.wordpress.org/downloadplugin/
 *  Text Domain: download-plugin
@@ -19,7 +19,7 @@ if ( !defined( 'ABSPATH' ) ) {
 if( !is_admin() ) return;
 
 // plugin version
-define('DPWAP_VERSION', '2.4.1');
+define('DPWAP_VERSION', '2.4.2');
 // directory separator
 if ( !defined( 'DS' ) ) define( 'DS', DIRECTORY_SEPARATOR );
 // plugin file name
@@ -32,8 +32,30 @@ if ( !defined( 'DPWAP_DIR' ) ) {
 if ( !defined( 'DPWAP_URL' ) ) {
     define( 'DPWAP_URL', plugin_dir_url( __FILE__ ) ); // Plugin url
 }
+if ( !defined( 'DPWAP_FREE_GUIDE_URL' ) ) {
+    define( 'DPWAP_FREE_GUIDE_URL', 'https://theeventprime.com/how-to-use-download-plugin-in-wordpress/' );
+}
+if ( !defined( 'DPWAP_PRO_GUIDE_URL' ) ) {
+    define( 'DPWAP_PRO_GUIDE_URL', 'https://theeventprime.com/how-to-use-download-plugin-in-wordpress/' );
+}
 if ( !defined( 'DPWAP_PREFIX' ) ) {
     define( 'DPWAP_PREFIX', 'dpwap_' ); // Plugin Prefix
+}
+
+if ( ! function_exists( 'dpwap_add_utm_params' ) ) {
+    function dpwap_add_utm_params( $url, $medium, $campaign, $content = '' ) {
+        $args = array(
+            'utm_source'   => 'download_plugin',
+            'utm_medium'   => $medium,
+            'utm_campaign' => $campaign,
+        );
+
+        if ( '' !== $content ) {
+            $args['utm_content'] = $content;
+        }
+
+        return add_query_arg( $args, $url );
+    }
 }
 
 $dpwapUploadDir = wp_upload_dir();
@@ -62,7 +84,7 @@ function dpwap_on_plugin_activation() {
 	update_option( 'dpwap_pro_welcome_modal_pending', 1 );
 	update_option( 'dpwap_pro_welcome_modal_dismissed', 0 );
 	update_option( 'dpwap_pro_notice_dismissed_at', 0 );
-	update_option( 'dpwap_pro_notice_cooldown_until', 0 );
+	update_option( 'dpwap_pro_notice_cooldown_until', $timestamp + DAY_IN_SECONDS );
 	update_option( 'dpwap_pro_notice_version', DPWAP_VERSION );
 }
 
@@ -137,11 +159,11 @@ if ( !function_exists( 'dpwap_func_uninstall' ) ){
 add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'dpwap_plugin_action_links' );
 
 function dpwap_plugin_action_links( $links ) {
-    $starter_url = 'https://theeventprime.com/how-to-use-download-plugin-pro-in-wordpress/';
-    $pro_url     = 'https://theeventprime.com/checkout/?download_id=43730&edd_action=add_to_cart&edd_options[price_id][]=1';
+    $starter_url = dpwap_add_utm_params( DPWAP_FREE_GUIDE_URL, 'plugin_row_action', 'guide', 'learn_how_it_works' );
+    $pro_url     = dpwap_add_utm_params( 'https://theeventprime.com/checkout/?download_id=43730&edd_action=add_to_cart&edd_options[price_id][]=1', 'plugin_row_action', 'pro_upgrade', 'upgrade_to_pro' );
     $is_pro_active = function_exists( 'dpwap_is_pro_active' ) && dpwap_is_pro_active();
 
-    $starter_link = '<a href="' . esc_url( $starter_url ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Starter Guide', 'download-plugin' ) . '</a>';
+    $starter_link = '<a href="' . esc_url( $starter_url ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Learn how it works', 'download-plugin' ) . '</a>';
     $pro_link     = '<a href="' . esc_url( $pro_url ) . '" target="_blank" rel="noopener noreferrer" class="dpwap-pro-link">' . esc_html__( 'Upgrade to Pro', 'download-plugin' ) . '</a>';
 
     $result = array();

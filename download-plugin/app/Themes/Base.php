@@ -57,7 +57,7 @@ class Base {
 		    $zip->close();		
 		    // Download Zip
 		    $zip_file = $folder_path.'.zip';
-		    if ( file_exists( $zip_file ) ) {
+            if ( file_exists( $zip_file ) ) {
                 header( 'Content-Description: File Transfer' );
                 header( 'Content-Type: application/octet-stream' );
                 header( 'Content-Disposition: attachment; filename="'.basename($zip_file).'"' );
@@ -68,6 +68,7 @@ class Base {
                 header( 'Set-Cookie:fileLoading=true' );
                 readfile( $zip_file );
                 unlink( $zip_file );
+                \DPWAP\Main::dpwap_record_free_download();
                 exit;
             }
         }	

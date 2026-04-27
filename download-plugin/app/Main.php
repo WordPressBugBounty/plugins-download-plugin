@@ -21,6 +21,7 @@ class Main
 
         add_action('admin_enqueue_scripts', array($this, 'dpwap_load_common_admin_scripts'));
         add_action('admin_notices', array($this, 'dpwap_render_pro_promo_notice'));
+        add_action('admin_notices', array($this, 'dpwap_render_review_notice'));
         add_action('admin_footer', array($this, 'dpwap_render_pro_welcome_modal'));
 
         $plugins = new pluginBase();
@@ -306,6 +307,22 @@ class Main
         wp_enqueue_style('dpwap_common_css', DPWAP_URL . 'assets/css/dpwap-common.css', array(), DPWAP_VERSION);
     }
 
+    public static function dpwap_record_free_download($count = 1)
+    {
+        if (function_exists('dpwap_is_pro_active') && dpwap_is_pro_active()) {
+            return;
+        }
+
+        $count = max(1, absint($count));
+        $current_count = (int) get_option('dpwap_free_download_count', 0);
+        update_option('dpwap_free_download_count', $current_count + $count);
+    }
+
+    public static function dpwap_get_free_download_count()
+    {
+        return (int) get_option('dpwap_free_download_count', 0);
+    }
+
     public static function instance()
     {
         if (is_null(self::$instance)) {
@@ -351,16 +368,14 @@ class Main
             return;
         }
 
-        $pro_url = 'https://theeventprime.com/checkout/?download_id=43730&edd_action=add_to_cart&edd_options[price_id][]=1';
+        $pro_url = dpwap_add_utm_params( add_query_arg( 'discount', 'DOWNLOAD20', 'https://theeventprime.com/checkout/?download_id=43730&edd_action=add_to_cart&edd_options[price_id][]=1' ), 'admin_notice', 'pro_upgrade', 'upgrade_to_pro' );
         ?>
         <div class="notice notice-info is-dismissible dpwap-dismissible dpwap-pro-notice" data-notice="pro-notice">
-            <div class="dpwap-pro-notice__icon" aria-hidden="true">
-                <img src="<?php echo esc_url(DPWAP_URL . 'assets/images/dpwap-pro-notice-backup.svg'); ?>" alt="" class="dpwap-pro-symbol" />
-            </div>
             <div class="dpwap-pro-notice__content">
-                <h2 class="dpwap-pro-notice__title"><?php esc_html_e('Need full backups, imports, and recovery tools?', 'download-plugin'); ?></h2>
-                <p class="dpwap-pro-notice__text"><?php esc_html_e('Download Plugin Pro helps you back up your site, move content in and out, and restore things when you need them. It adds backup export and restore, CSV import and export, media ZIP import, and backup package recovery tools.', 'download-plugin'); ?></p>
+                <h2 class="dpwap-pro-notice__title"><?php esc_html_e('Unlock Everything with Download Plugin Pro', 'download-plugin'); ?></h2>
+                <p class="dpwap-pro-notice__text"><?php esc_html_e('You’re using the Free Version for quick downloads. Pro adds tools to upload posts, pages, users, and media ZIP files, download and restore full site backups, and much more.', 'download-plugin'); ?></p>
                 <div class="dpwap-pro-notice__actions">
+                    <span class="dpwap-pro-notice__discount"><?php esc_html_e('New-user offer. Expires in 48 Hrs.', 'download-plugin'); ?></span>
                     <a href="<?php echo esc_url($pro_url); ?>" target="_blank" rel="noopener noreferrer" class="button button-primary dpwap-pro-button">
                         <?php esc_html_e('Upgrade to Pro', 'download-plugin'); ?>
                     </a>
@@ -384,8 +399,105 @@ class Main
             return false;
         }
 
+        if ($this->dpwap_is_pro_notice_test_mode()) {
+            return true;
+        }
+
+        $now = time();
+        $activation_time = (int) get_option('dpwap_pro_last_activation_time', 0);
+        if ($activation_time > 0 && ($activation_time + DAY_IN_SECONDS) > $now) {
+            return false;
+        }
+
         $cooldown_until = (int) get_option('dpwap_pro_notice_cooldown_until', 0);
-        return $cooldown_until <= time();
+        return $cooldown_until <= $now;
+    }
+
+    protected function dpwap_is_pro_notice_test_mode()
+    {
+        if (!current_user_can('manage_options')) {
+            return false;
+        }
+
+        return isset($_GET['dpwap_test_pro_notice']) && '1' === sanitize_text_field(wp_unslash($_GET['dpwap_test_pro_notice']));
+    }
+
+    protected function dpwap_is_review_notice_screen()
+    {
+        global $pagenow;
+
+        $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+        if (in_array($pagenow, array('plugins.php', 'themes.php'), true)) {
+            return true;
+        }
+
+        if (!$screen || empty($screen->base)) {
+            return false;
+        }
+
+        return in_array($screen->base, array('plugins', 'themes', 'plugins-network'), true);
+    }
+
+    protected function dpwap_should_show_review_notice()
+    {
+        if (
+            !current_user_can('manage_options') ||
+            (function_exists('dpwap_is_pro_active') && dpwap_is_pro_active())
+        ) {
+            return false;
+        }
+
+        if (!$this->dpwap_is_review_notice_screen()) {
+            return false;
+        }
+
+        if ($this->dpwap_is_review_notice_test_mode()) {
+            return true;
+        }
+
+        if ($this->dpwap_should_show_welcome_modal() || $this->dpwap_should_show_pro_notice()) {
+            return false;
+        }
+
+        if ((int) get_option('dpwap_review_notice_dismissed_at', 0) > 0) {
+            return false;
+        }
+
+        return self::dpwap_get_free_download_count() >= 10;
+    }
+
+    protected function dpwap_is_review_notice_test_mode()
+    {
+        if (!current_user_can('manage_options')) {
+            return false;
+        }
+
+        return isset($_GET['dpwap_test_review_notice']) && '1' === sanitize_text_field(wp_unslash($_GET['dpwap_test_review_notice']));
+    }
+
+    public function dpwap_render_review_notice()
+    {
+        if (!$this->dpwap_should_show_review_notice()) {
+            return;
+        }
+
+        $review_url = dpwap_add_utm_params( 'https://wordpress.org/support/plugin/download-plugin/reviews/#new-post', 'admin_notice', 'review_request', 'leave_a_review' );
+        ?>
+        <div class="notice notice-info is-dismissible dpwap-dismissible dpwap-review-notice" data-notice="review-notice">
+            <div class="dpwap-review-notice__content">
+                <h2 class="dpwap-review-notice__title"><?php esc_html_e('Nice! You’ve reached 10 downloads.', 'download-plugin'); ?></h2>
+                <p class="dpwap-review-notice__text"><?php esc_html_e('Thanks for using Download Plugin. If it’s been useful, please rate us on WordPress and let other people know about it.', 'download-plugin'); ?></p>
+                <div class="dpwap-review-notice__actions">
+                    <a href="<?php echo esc_url($review_url); ?>" target="_blank" rel="noopener noreferrer" class="button button-primary dpwap-review-button" data-action="review">
+                        <?php esc_html_e('Leave a review', 'download-plugin'); ?>
+                    </a>
+                    <button type="button" class="button button-secondary dpwap-review-button-secondary" data-action="dismiss">
+                        <?php esc_html_e('No, thank you', 'download-plugin'); ?>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <?php
     }
 
     protected function dpwap_should_show_welcome_modal()
@@ -416,69 +528,56 @@ class Main
             return;
         }
 
-        $pro_url = 'https://theeventprime.com/checkout/?download_id=43730&edd_action=add_to_cart&edd_options[price_id][]=1';
+        $pro_url     = dpwap_add_utm_params( 'https://theeventprime.com/checkout/?download_id=43730&edd_action=add_to_cart&edd_options[price_id][]=1', 'admin_modal', 'pro_upgrade', 'upgrade_to_pro' );
+        $guide_url   = dpwap_add_utm_params( DPWAP_PRO_GUIDE_URL, 'admin_modal', 'guide', 'learn_how_it_works' );
+        $glint_title = __('Download Plugin', 'download-plugin');
         ?>
         <div id="dpwap-pro-welcome-modal" class="dpwap-pro-modal" aria-hidden="true">
             <div class="dpwap-pro-modal__backdrop"></div>
             <div class="dpwap-pro-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="dpwap-pro-welcome-title">
-                <div class="dpwap-pro-modal__accent" aria-hidden="true"></div>
                 <button type="button" class="dpwap-pro-modal__close" data-action="dismiss" aria-label="<?php esc_attr_e('Close dialog', 'download-plugin'); ?>">
                     <span aria-hidden="true">&#10005;</span>
                 </button>
-                <h2 id="dpwap-pro-welcome-title"><?php esc_html_e('Welcome to Download Plugin', 'download-plugin'); ?></h2>
-                <p class="dpwap-pro-modal__intro"><?php esc_html_e('Start with the Free Version for fast plugin downloads and quick site administration, then upgrade to Pro for backup, restore, import, export, and recovery workflows.', 'download-plugin'); ?></p>
+                <h2 id="dpwap-pro-welcome-title">
+                    <?php esc_html_e('Welcome to', 'download-plugin'); ?>
+                    <span class="dpwap-pro-modal__glint" data-text="<?php echo esc_attr($glint_title); ?>" aria-label="<?php echo esc_attr($glint_title); ?>"><?php foreach (str_split($glint_title) as $index => $character) : ?><span class="dpwap-pro-modal__glint-letter<?php echo ' ' === $character ? ' dpwap-pro-modal__glint-letter--space' : ''; ?>" style="--dpwap-glint-delay: <?php echo esc_attr(number_format(0.42 + ($index * 0.17), 3)); ?>s;" aria-hidden="true"><?php echo ' ' === $character ? '&nbsp;' : esc_html($character); ?></span><?php endforeach; ?></span><span class="dpwap-pro-modal__bang"><?php esc_html_e('!', 'download-plugin'); ?></span>
+                </h2>
+                <p class="dpwap-pro-modal__intro"><?php esc_html_e('The Free Version already does serious work. There’s much more waiting in Pro.', 'download-plugin'); ?></p>
                 <div class="dpwap-pro-modal__grid">
                     <div class="dpwap-pro-modal__column">
-                        <h3><?php esc_html_e('What you get in the Free Version', 'download-plugin'); ?></h3>
+                        <h3><?php esc_html_e('FREE VERSION', 'download-plugin'); ?></h3>
                         <ul>
-                            <li>
-                                <strong><?php esc_html_e('Download single plugins with one click', 'download-plugin'); ?></strong>
-                                <span><?php esc_html_e('Save any installed plugin as a ZIP file directly from the Plugins screen.', 'download-plugin'); ?></span>
-                            </li>
-                            <li>
-                                <strong><?php esc_html_e('Download multiple plugins in bulk', 'download-plugin'); ?></strong>
-                                <span><?php esc_html_e('Select several plugins and download them together from the bulk actions menu.', 'download-plugin'); ?></span>
-                            </li>
-                            <li>
-                                <strong><?php esc_html_e('Upload and install multiple plugins', 'download-plugin'); ?></strong>
-                                <span><?php esc_html_e('Bring in plugin ZIP files quickly from the Plugins Add New screen.', 'download-plugin'); ?></span>
-                            </li>
-                            <li>
-                                <strong><?php esc_html_e('Download themes, users, content, and media', 'download-plugin'); ?></strong>
-                                <span><?php esc_html_e('Work with themes, users, posts, pages, comments, attachments, and custom post types.', 'download-plugin'); ?></span>
-                            </li>
+                            <li><?php esc_html_e('Download any free or paid plugin as zip in 1-click', 'download-plugin'); ?></li>
+                            <li><?php esc_html_e('Download multiple plugins in bulk', 'download-plugin'); ?></li>
+                            <li><?php esc_html_e('Download free and paid themes', 'download-plugin'); ?></li>
+                            <li><?php esc_html_e('Download users', 'download-plugin'); ?></li>
+                            <li><?php esc_html_e('Download posts, custom posts and pages', 'download-plugin'); ?></li>
+                            <li><?php esc_html_e('Download comments', 'download-plugin'); ?></li>
+                            <li><?php esc_html_e('Download categories and tags', 'download-plugin'); ?></li>
+                            <li><?php esc_html_e('Upload multiple plugins', 'download-plugin'); ?></li>
                         </ul>
                     </div>
                     <div class="dpwap-pro-modal__column dpwap-pro-modal__column--accent">
-                        <h3><?php esc_html_e('What Pro adds', 'download-plugin'); ?></h3>
+                        <h3><?php esc_html_e('WHAT PRO ADDS', 'download-plugin'); ?></h3>
                         <ul>
-                            <li>
-                                <strong><?php esc_html_e('Full site backup export and restore', 'download-plugin'); ?></strong>
-                                <span><?php esc_html_e('Create downloadable backups and restore them when you need a recovery path.', 'download-plugin'); ?></span>
-                            </li>
-                            <li>
-                                <strong><?php esc_html_e('CSV import and export for content', 'download-plugin'); ?></strong>
-                                <span><?php esc_html_e('Move posts, pages, users, comments, and taxonomies in and out of your site.', 'download-plugin'); ?></span>
-                            </li>
-                            <li>
-                                <strong><?php esc_html_e('Media ZIP import with useful metadata', 'download-plugin'); ?></strong>
-                                <span><?php esc_html_e('Import media files with title, caption, alt text, description, and taxonomy details.', 'download-plugin'); ?></span>
-                            </li>
-                            <li>
-                                <strong><?php esc_html_e('Backup package management and recovery workflow', 'download-plugin'); ?></strong>
-                                <span><?php esc_html_e('Keep recent backup packages organized for easier recovery and reuse.', 'download-plugin'); ?></span>
-                            </li>
+                            <li><?php esc_html_e('Upload posts and pages', 'download-plugin'); ?></li>
+                            <li><?php esc_html_e('Upload users', 'download-plugin'); ?></li>
+                            <li><?php esc_html_e('Upload comments', 'download-plugin'); ?></li>
+                            <li><?php esc_html_e('Upload categories and tags', 'download-plugin'); ?></li>
+                            <li><?php esc_html_e('Upload media files as zip', 'download-plugin'); ?></li>
+                            <li><?php esc_html_e('Download site database', 'download-plugin'); ?></li>
+                            <li><?php esc_html_e('Download and restore partial site backups', 'download-plugin'); ?></li>
+                            <li><?php esc_html_e('Download and restore full site backups', 'download-plugin'); ?></li>
                         </ul>
                     </div>
                 </div>
-                <p class="dpwap-pro-modal__note"><?php esc_html_e('Pro is the natural next step if you need stronger backup, migration, import, and recovery tools, and you can start with the Free Version and upgrade anytime.', 'download-plugin'); ?></p>
                 <div class="dpwap-pro-modal__actions">
-                    <a href="<?php echo esc_url($pro_url); ?>" target="_blank" rel="noopener noreferrer" class="button button-primary dpwap-pro-button">
+                    <a href="<?php echo esc_url($guide_url); ?>" target="_blank" rel="noopener noreferrer" class="button button-primary dpwap-pro-button" data-action="guide">
+                        <?php esc_html_e('Learn how it works', 'download-plugin'); ?>
+                    </a>
+                    <a href="<?php echo esc_url($pro_url); ?>" target="_blank" rel="noopener noreferrer" class="button button-secondary dpwap-pro-button-secondary">
                         <?php esc_html_e('Upgrade to Pro', 'download-plugin'); ?>
                     </a>
-                    <button type="button" class="button button-secondary dpwap-pro-button-secondary" data-action="dismiss">
-                        <?php esc_html_e('Continue with the Free Version', 'download-plugin'); ?>
-                    </button>
                 </div>
             </div>
         </div>
@@ -505,6 +604,9 @@ class Main
                 update_option('dpwap_pro_welcome_modal_pending', 0);
                 update_option('dpwap_pro_welcome_modal_dismissed', 1);
                 break;
+            case 'review-notice':
+                update_option('dpwap_review_notice_dismissed_at', time());
+                break;
         }
 
         wp_send_json_success();
@@ -516,5 +618,3 @@ class Main
         wp_send_json_success('Notice Dismissed');
     }
 }
-
-
