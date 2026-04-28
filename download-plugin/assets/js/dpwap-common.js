@@ -63,10 +63,12 @@
 
     var proModal = $('#dpwap-pro-welcome-modal');
     if (proModal.length) {
-      $('body').addClass('dpwap-pro-modal-open');
-      window.setTimeout(function() {
-        proModal.addClass('is-visible').attr('aria-hidden', 'false');
-      }, 30);
+      var openWelcomeModal = function() {
+        $('body').addClass('dpwap-pro-modal-open');
+        window.setTimeout(function() {
+          proModal.addClass('is-visible').attr('aria-hidden', 'false');
+        }, 30);
+      };
 
       var dismissWelcomeModal = function() {
         proModal.removeClass('is-visible').attr('aria-hidden', 'true');
@@ -79,10 +81,27 @@
         });
       };
 
+      if (proModal.attr('data-auto-open') !== '0') {
+        openWelcomeModal();
+      }
+
+      $(document).on('click', '.dpwap-pro-notice [data-action="open-pro-modal"]', function(event) {
+        var checkoutUrl = $(this).data('checkout-url');
+        var checkoutButton = proModal.find('.dpwap-pro-modal__checkout');
+
+        event.preventDefault();
+
+        if (checkoutUrl && checkoutButton.length) {
+          checkoutButton.attr('href', checkoutUrl);
+        }
+
+        openWelcomeModal();
+      });
+
       $(document).on('click', '#dpwap-pro-welcome-modal [data-action="dismiss"], #dpwap-pro-welcome-modal [data-action="guide"], #dpwap-pro-welcome-modal .dpwap-pro-modal__backdrop', dismissWelcomeModal);
 
       $(document).on('keydown.dpwapProModal', function(event) {
-        if (event.key === 'Escape') {
+        if (event.key === 'Escape' && proModal.hasClass('is-visible')) {
           dismissWelcomeModal();
           $(document).off('keydown.dpwapProModal');
         }

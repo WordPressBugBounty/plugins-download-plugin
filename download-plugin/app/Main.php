@@ -368,17 +368,26 @@ class Main
             return;
         }
 
-        $pro_url = dpwap_add_utm_params( add_query_arg( 'discount', 'DOWNLOAD20', 'https://theeventprime.com/checkout/?download_id=43730&edd_action=add_to_cart&edd_options[price_id][]=1' ), 'admin_notice', 'pro_upgrade', 'upgrade_to_pro' );
+        $pro_url                    = dpwap_add_utm_params( add_query_arg( 'discount', 'DOWNLOAD20', 'https://theeventprime.com/checkout/?download_id=43730&edd_action=add_to_cart&edd_options[price_id][]=1' ), 'admin_notice', 'pro_upgrade', 'upgrade_to_pro' );
+        $is_legacy_notice_audience  = $this->dpwap_is_legacy_pro_notice_audience();
+        $notice_audience            = $is_legacy_notice_audience ? 'legacy' : 'recent';
+        $discount_text              = $is_legacy_notice_audience ? __('Limited-time Pro offer. Expires in 48 Hrs.', 'download-plugin') : __('New-user offer. Expires in 48 Hrs.', 'download-plugin');
         ?>
-        <div class="notice notice-info is-dismissible dpwap-dismissible dpwap-pro-notice" data-notice="pro-notice">
+        <div class="notice notice-info is-dismissible dpwap-dismissible dpwap-pro-notice" data-notice="pro-notice" data-audience="<?php echo esc_attr($notice_audience); ?>">
             <div class="dpwap-pro-notice__content">
                 <h2 class="dpwap-pro-notice__title"><?php esc_html_e('Unlock Everything with Download Plugin Pro', 'download-plugin'); ?></h2>
                 <p class="dpwap-pro-notice__text"><?php esc_html_e('You’re using the Free Version for quick downloads. Pro adds tools to upload posts, pages, users, and media ZIP files, download and restore full site backups, and much more.', 'download-plugin'); ?></p>
                 <div class="dpwap-pro-notice__actions">
-                    <span class="dpwap-pro-notice__discount"><?php esc_html_e('New-user offer. Expires in 48 Hrs.', 'download-plugin'); ?></span>
-                    <a href="<?php echo esc_url($pro_url); ?>" target="_blank" rel="noopener noreferrer" class="button button-primary dpwap-pro-button">
-                        <?php esc_html_e('Upgrade to Pro', 'download-plugin'); ?>
-                    </a>
+                    <span class="dpwap-pro-notice__discount"><?php echo esc_html($discount_text); ?></span>
+                    <?php if ($is_legacy_notice_audience) : ?>
+                        <a href="<?php echo esc_url($pro_url); ?>" target="_blank" rel="noopener noreferrer" class="button button-primary dpwap-pro-button" data-action="open-pro-modal" data-checkout-url="<?php echo esc_url($pro_url); ?>">
+                            <?php esc_html_e('See what Pro adds', 'download-plugin'); ?>
+                        </a>
+                    <?php else : ?>
+                        <a href="<?php echo esc_url($pro_url); ?>" target="_blank" rel="noopener noreferrer" class="button button-primary dpwap-pro-button">
+                            <?php esc_html_e('Upgrade to Pro', 'download-plugin'); ?>
+                        </a>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -395,12 +404,12 @@ class Main
             return false;
         }
 
-        if ($this->dpwap_should_show_welcome_modal()) {
-            return false;
-        }
-
         if ($this->dpwap_is_pro_notice_test_mode()) {
             return true;
+        }
+
+        if ($this->dpwap_should_show_welcome_modal()) {
+            return false;
         }
 
         $now = time();
@@ -413,13 +422,52 @@ class Main
         return $cooldown_until <= $now;
     }
 
-    protected function dpwap_is_pro_notice_test_mode()
+    protected function dpwap_is_legacy_pro_notice_audience()
     {
-        if (!current_user_can('manage_options')) {
+        $forced_audience = $this->dpwap_get_forced_pro_notice_audience();
+        if ('legacy' === $forced_audience) {
+            return true;
+        }
+
+        if ('recent' === $forced_audience) {
             return false;
         }
 
-        return isset($_GET['dpwap_test_pro_notice']) && '1' === sanitize_text_field(wp_unslash($_GET['dpwap_test_pro_notice']));
+        return 0 >= (int) get_option('dpwap_pro_last_activation_time', 0);
+    }
+
+    protected function dpwap_should_render_legacy_pro_notice_modal()
+    {
+        return $this->dpwap_is_legacy_pro_notice_audience() && $this->dpwap_should_show_pro_notice();
+    }
+
+    protected function dpwap_is_pro_notice_test_mode()
+    {
+        return '' !== $this->dpwap_get_forced_pro_notice_audience();
+    }
+
+    protected function dpwap_get_forced_pro_notice_audience()
+    {
+        if (!current_user_can('manage_options')) {
+            return '';
+        }
+
+        foreach (array('dpwap_force_pro_notice', 'dpwap_test_pro_notice') as $flag) {
+            if (!isset($_GET[$flag])) {
+                continue;
+            }
+
+            $value = sanitize_key(wp_unslash($_GET[$flag]));
+            if (in_array($value, array('legacy', 'recent'), true)) {
+                return $value;
+            }
+
+            if (in_array($value, array('1', 'true', 'yes'), true)) {
+                return 'auto';
+            }
+        }
+
+        return '';
     }
 
     protected function dpwap_is_review_notice_screen()
@@ -514,7 +562,8 @@ class Main
                     !in_array($screen->base, array('plugins', 'plugins-network'), true)
                 )
             ) ||
-            dpwap_is_pro_active()
+            dpwap_is_pro_active() ||
+            $this->dpwap_is_pro_notice_test_mode()
         ) {
             return false;
         }
@@ -524,7 +573,8 @@ class Main
 
     public function dpwap_render_pro_welcome_modal()
     {
-        if (!$this->dpwap_should_show_welcome_modal()) {
+        $auto_open_modal = $this->dpwap_should_show_welcome_modal();
+        if (!$auto_open_modal && !$this->dpwap_should_render_legacy_pro_notice_modal()) {
             return;
         }
 
@@ -532,7 +582,7 @@ class Main
         $guide_url   = dpwap_add_utm_params( DPWAP_PRO_GUIDE_URL, 'admin_modal', 'guide', 'learn_how_it_works' );
         $glint_title = __('Download Plugin', 'download-plugin');
         ?>
-        <div id="dpwap-pro-welcome-modal" class="dpwap-pro-modal" aria-hidden="true">
+        <div id="dpwap-pro-welcome-modal" class="dpwap-pro-modal" aria-hidden="true" data-auto-open="<?php echo $auto_open_modal ? '1' : '0'; ?>">
             <div class="dpwap-pro-modal__backdrop"></div>
             <div class="dpwap-pro-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="dpwap-pro-welcome-title">
                 <button type="button" class="dpwap-pro-modal__close" data-action="dismiss" aria-label="<?php esc_attr_e('Close dialog', 'download-plugin'); ?>">
@@ -575,7 +625,7 @@ class Main
                     <a href="<?php echo esc_url($guide_url); ?>" target="_blank" rel="noopener noreferrer" class="button button-primary dpwap-pro-button" data-action="guide">
                         <?php esc_html_e('Learn how it works', 'download-plugin'); ?>
                     </a>
-                    <a href="<?php echo esc_url($pro_url); ?>" target="_blank" rel="noopener noreferrer" class="button button-secondary dpwap-pro-button-secondary">
+                    <a href="<?php echo esc_url($pro_url); ?>" target="_blank" rel="noopener noreferrer" class="button button-secondary dpwap-pro-button-secondary dpwap-pro-modal__checkout" data-default-url="<?php echo esc_url($pro_url); ?>">
                         <?php esc_html_e('Upgrade to Pro', 'download-plugin'); ?>
                     </a>
                 </div>
