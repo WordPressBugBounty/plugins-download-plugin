@@ -384,7 +384,7 @@ class Main
                             <?php esc_html_e('See what Pro adds', 'download-plugin'); ?>
                         </a>
                     <?php else : ?>
-                        <a href="<?php echo esc_url($pro_url); ?>" target="_blank" rel="noopener noreferrer" class="button button-primary dpwap-pro-button">
+                        <a href="<?php echo esc_url($pro_url); ?>" target="_blank" rel="noopener noreferrer" class="button button-primary dpwap-pro-button" data-action="open-pro-modal" data-checkout-url="<?php echo esc_url( $pro_url ); ?>">
                             <?php esc_html_e('Upgrade to Pro', 'download-plugin'); ?>
                         </a>
                     <?php endif; ?>
@@ -571,10 +571,37 @@ class Main
         return (bool) get_option('dpwap_pro_welcome_modal_pending', false);
     }
 
+    protected function dpwap_should_render_pro_welcome_modal_shell()
+    {
+        global $pagenow;
+
+        $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+
+        if (
+            !current_user_can('manage_options') ||
+            (
+                'plugins.php' !== $pagenow &&
+                (
+                    !$screen ||
+                    !in_array($screen->base, array('plugins', 'plugins-network'), true)
+                )
+            ) ||
+            dpwap_is_pro_active()
+        ) {
+            return false;
+        }
+
+        return true;
+    }
+
     public function dpwap_render_pro_welcome_modal()
     {
         $auto_open_modal = $this->dpwap_should_show_welcome_modal();
-        if (!$auto_open_modal && !$this->dpwap_should_render_legacy_pro_notice_modal()) {
+        if (
+            !$auto_open_modal &&
+            !$this->dpwap_should_render_legacy_pro_notice_modal() &&
+            !$this->dpwap_should_render_pro_welcome_modal_shell()
+        ) {
             return;
         }
 
@@ -592,7 +619,7 @@ class Main
                     <?php esc_html_e('Welcome to', 'download-plugin'); ?>
                     <span class="dpwap-pro-modal__glint" data-text="<?php echo esc_attr($glint_title); ?>" aria-label="<?php echo esc_attr($glint_title); ?>"><?php foreach (str_split($glint_title) as $index => $character) : ?><span class="dpwap-pro-modal__glint-letter<?php echo ' ' === $character ? ' dpwap-pro-modal__glint-letter--space' : ''; ?>" style="--dpwap-glint-delay: <?php echo esc_attr(number_format(0.42 + ($index * 0.17), 3)); ?>s;" aria-hidden="true"><?php echo ' ' === $character ? '&nbsp;' : esc_html($character); ?></span><?php endforeach; ?></span><span class="dpwap-pro-modal__bang"><?php esc_html_e('!', 'download-plugin'); ?></span>
                 </h2>
-                <p class="dpwap-pro-modal__intro"><?php esc_html_e('The Free Version already does serious work. There’s much more waiting in Pro.', 'download-plugin'); ?></p>
+                <p class="dpwap-pro-modal__intro"></p>
                 <div class="dpwap-pro-modal__grid">
                     <div class="dpwap-pro-modal__column">
                         <h3><?php esc_html_e('FREE VERSION', 'download-plugin'); ?></h3>

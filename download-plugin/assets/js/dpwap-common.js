@@ -85,7 +85,7 @@
         openWelcomeModal();
       }
 
-      $(document).on('click', '.dpwap-pro-notice [data-action="open-pro-modal"]', function(event) {
+      $(document).on('click', '[data-action="open-pro-modal"]', function(event) {
         var checkoutUrl = $(this).data('checkout-url');
         var checkoutButton = proModal.find('.dpwap-pro-modal__checkout');
 

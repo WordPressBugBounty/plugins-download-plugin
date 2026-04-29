@@ -3,7 +3,7 @@
 *  Plugin Name: Download Plugin
 *  Plugin URI: http://metagauss.com
 *  Description: Download any plugin from your WordPress admin panel's Plugins page by just one click! Now, download themes, users, blog posts, pages, custom posts, comments, attachments and much more.
-*  Version: 2.4.3
+*  Version: 2.4.4
 *  Author: Download Plugin
 *  Author URI: https://profiles.wordpress.org/downloadplugin/
 *  Text Domain: download-plugin
@@ -19,7 +19,7 @@ if ( !defined( 'ABSPATH' ) ) {
 if( !is_admin() ) return;
 
 // plugin version
-define('DPWAP_VERSION', '2.4.3');
+define('DPWAP_VERSION', '2.4.4');
 // directory separator
 if ( !defined( 'DS' ) ) define( 'DS', DIRECTORY_SEPARATOR );
 // plugin file name
@@ -164,7 +164,7 @@ function dpwap_plugin_action_links( $links ) {
     $is_pro_active = function_exists( 'dpwap_is_pro_active' ) && dpwap_is_pro_active();
 
     $starter_link = '<a href="' . esc_url( $starter_url ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Learn how it works', 'download-plugin' ) . '</a>';
-    $pro_link     = '<a href="' . esc_url( $pro_url ) . '" target="_blank" rel="noopener noreferrer" class="dpwap-pro-link">' . esc_html__( 'Upgrade to Pro', 'download-plugin' ) . '</a>';
+    $pro_link     = '<a href="' . esc_url( $pro_url ) . '" target="_blank" rel="noopener noreferrer" class="dpwap-pro-link" data-action="open-pro-modal" data-checkout-url="' . esc_url( $pro_url ) . '">' . esc_html__( 'Upgrade to Pro', 'download-plugin' ) . '</a>';
 
     $result = array();
     foreach ( $links as $key => $link ) {
